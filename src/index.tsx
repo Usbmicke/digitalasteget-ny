@@ -606,10 +606,11 @@ function handleAuthClick(): void {
 }
 
 // Placeholder rotation logic
-const placeholderTexts = [
-    "Ställ en fråga om KMA-planer...",
-    "Be om offertförslag på badrum...",
-    "Få en checklista för arbetsmiljö..."
+   const placeholderTexts = [
+     "Ställ en fråga om KMA-planer...",
+     "Be om offertförslag på badrum...",
+     "Få en checklista för arbetsmiljö..."
+   ];
 ];
 let placeholderIntervalId: number | undefined;
 let currentPlaceholderIdx = 0;
