@@ -1,4 +1,3 @@
-
 {
   "name": "digitalasteget_ai_chat",
   "version": "1.0.0",
@@ -10,7 +9,8 @@
   },
   "dependencies": {
     "@google/genai": "^0.14.0",
-    "marked": "^15.0.12"
+    "marked": "^15.0.12",
+    "firebase": "^9.0.0"
   },
   "devDependencies": {
     "esbuild": "^0.20.0"

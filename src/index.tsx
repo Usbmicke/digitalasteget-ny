@@ -421,7 +421,7 @@ function addMessageToChatUI(message: string, sender: 'user' | 'ai', isInitial: b
             }
             
             // Check for wide bubble conditions (code block or long message, not initial)
-            const containsCodeBlock = message.includes('```');
+            const containsCodeBlock = message.includes("```");
             const isLongMessage = message.length > 300;
             const isNotInitialMessage = !isInitial;
             // Ensure not to add wide class to the special initial bubble
@@ -611,9 +611,8 @@ function handleAuthClick(): void {
      "Be om offertförslag på badrum...",
      "Få en checklista för arbetsmiljö..."
    ];
-];
-let placeholderIntervalId: number | undefined;
-let currentPlaceholderIdx = 0;
+   let placeholderIntervalId: number | undefined;
+   let currentPlaceholderIdx = 0;
 
 function updatePlaceholder(): void {
     if (elements.userInput && elements.userInput.value === '' && document.activeElement !== elements.userInput) {
