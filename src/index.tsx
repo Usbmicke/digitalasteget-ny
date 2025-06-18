@@ -1,4 +1,3 @@
-
 /**
  * @license
  * Copyright 2025 Google LLC
@@ -608,12 +607,9 @@ function handleAuthClick(): void {
 
 // Placeholder rotation logic
 const placeholderTexts = [
-    "Fråga mig t.ex. 'Skapa en checklista för ett fönsterbyte'...",
-    "Behöver du en riskanalys för ditt projekt?",
-    "Få hjälp med ÄTA-hantering...",
-    "Hur skriver jag en korrekt offert enligt ABT06?",
-    "Ge mig tips för att förbättra KMA-arbetet.",
-    "Vad bör jag tänka på vid en SWOT-analys för ett nytt stort projekt?"
+    "Ställ en fråga om KMA-planer...",
+    "Be om offertförslag på badrum...",
+    "Få en checklista för arbetsmiljö..."
 ];
 let placeholderIntervalId: number | undefined;
 let currentPlaceholderIdx = 0;
