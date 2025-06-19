@@ -1,65 +1,830 @@
+
 <!DOCTYPE html>
 <html lang="sv">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ByggPilot - Din Digitala Kollega</title>
+    <title>ByggPilot - Din digitala kollega i byggbranschen</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    <link rel="stylesheet" href="index.css">
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🛠️</text></svg>">
-<script type="importmap">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <style>
+        :root {
+            --accent-color: #00A9FF; 
+            --accent-color-light: #7de0ff; 
+            --accent-color-dark: #007bb5;
+            --bg-dark-primary: #0D1117; /* Darker base */
+            --bg-dark-secondary: #141A23; /* Slightly lighter secondary */
+            --text-primary: #F0F6FC; /* Off-white for better contrast */
+            --text-secondary: #A0AEC0; /* Softer secondary text */
+            --border-color: #2A303C; /* Softer border */
+            --template-bg-color: rgba(30, 41, 59, 0.9); /* Adjusted template bg */
+            --card-bg-color: rgba(23, 32, 51, 0.75); /* Card background for info view */
+            --button-hover-bg-color: rgba(0, 169, 255, 0.2);
+            --button-secondary-bg: rgba(42, 54, 78, 0.7);
+            --button-secondary-border: var(--border-color);
+            --button-secondary-hover-border: var(--accent-color);
+            --input-bg-color: rgba(31, 41, 55, 0.95);
+        }
+        html { scroll-behavior: smooth; }
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background-color: var(--bg-dark-primary); 
+            color: var(--text-primary); 
+            overflow: hidden; 
+            display: flex; 
+            flex-direction: column; 
+            height: 100vh; 
+            cursor: default; 
+            margin: 0;
+        }
+        ::-webkit-scrollbar { width: 10px; } 
+        ::-webkit-scrollbar-track { background: transparent; } 
+        ::-webkit-scrollbar-thumb { background: #2D3748; border-radius: 5px; } 
+        ::-webkit-scrollbar-thumb:hover { background: #4A5568; }
+
+        #dna-background-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            pointer-events: none;
+            background-color: var(--bg-dark-primary);
+        }
+
+        #mouse-trail { 
+            position: fixed; 
+            width: 24px; height: 24px; 
+            background-color: var(--accent-color); 
+            border-radius: 50%; 
+            pointer-events: none; 
+            z-index: 9999; 
+            opacity: 0.15; 
+            transform: translate(-50%, -50%); 
+            transition: transform 0.1s ease-out, opacity 0.2s ease-out;
+            filter: blur(5px); 
+            will-change: transform;
+        }
+         body:not(:hover) #mouse-trail {
+            opacity: 0;
+        }
+
+        .page-wrapper { display: flex; flex-direction: column; height: 100%; width: 100%; position: relative; z-index: 5; }
+        
+        .header { 
+            padding: 1rem 1.5rem; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            flex-shrink: 0; 
+            background-color: rgba(13, 17, 23, 0.85); /* Slightly darker header */
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--border-color);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .header-title-link { 
+            display: flex; 
+            align-items: baseline; 
+            gap: 0.5rem; 
+            font-size: 1.3rem; /* Slightly larger */
+            font-weight: 700; /* Bolder */
+            text-decoration: none; 
+            color: var(--text-primary); 
+            padding: 0.35rem 0.6rem; 
+            cursor: pointer; 
+            border-radius: 8px; 
+            transition: background-color 0.2s ease, box-shadow 0.2s ease;
+        }
+        .header-title-link span { font-style: italic; font-size: 0.9rem; color: var(--text-secondary); font-weight: 400; }
+        .header-title-link:hover, .header-title-link:focus-visible { 
+            box-shadow: 0 0 15px rgba(0, 169, 255, 0.4); 
+            background: var(--button-hover-bg-color); 
+            outline: none;
+        }
+        .header-buttons button { 
+            background-color: var(--button-secondary-bg); 
+            backdrop-filter: blur(5px); 
+            border: 1px solid var(--button-secondary-border); 
+            color: var(--text-primary); 
+            padding: 0.6rem 1.1rem; /* Slightly larger padding */
+            border-radius: 8px; 
+            font-size: 0.9rem; 
+            font-weight: 500; 
+            transition: all 0.2s ease-out; 
+            display: inline-flex; 
+            align-items: center; 
+            gap: 0.5rem; 
+            cursor:pointer;
+        }
+        .header-buttons button:hover, .header-buttons button:focus-visible { 
+            border-color: var(--button-secondary-hover-border); 
+            box-shadow: 0 0 15px rgba(0, 169, 255, 0.4);
+            background-color: var(--button-hover-bg-color);
+            outline: none;
+        }
+        .header-buttons button svg {
+            transition: transform 0.2s ease-in-out;
+        }
+        .header-buttons button:hover svg {
+            transform: scale(1.1);
+        }
+
+        .main-view { 
+            flex-grow: 1; 
+            display: flex;
+            flex-direction: column; 
+            padding: 1rem; /* Consistent padding */
+            overflow: hidden; 
+            align-items: center; 
+            justify-content: center; 
+        }
+        
+        #chat-view { 
+            display: flex; 
+            flex-direction: column; 
+            height: 100%; 
+            width: 100%; 
+            max-width: 800px; 
+            position: relative; 
+        }
+        #chatMessages { 
+            flex-grow: 1; 
+            overflow-y: auto; 
+            padding: 0 0.5rem; 
+            display: flex; 
+            flex-direction: column;
+            gap: 0.5rem; 
+        }
+        .chat-messages-inner { 
+            display: flex; 
+            flex-direction: column; 
+            gap: 1rem; 
+            padding-top: 1rem; 
+            padding-bottom: 1rem; 
+        }
+        .chat-message-item {
+            display: flex;
+            flex-direction: column;
+        }
+        .chat-bubble { 
+            padding: 0.85rem 1.35rem; /* Slightly increased padding */
+            border-radius: 20px; 
+            max-width: 85%; 
+            word-wrap: break-word; 
+            font-size: 0.95rem; 
+            line-height: 1.65; 
+            white-space: pre-wrap; 
+            border: 1px solid transparent; 
+            box-shadow: 0 3px 6px rgba(0,0,0,0.15); 
+        }
+        .chat-bubble-user { 
+            background-color: var(--accent-color); 
+            color: #fff; 
+            font-weight: 500; 
+            align-self: flex-end; 
+            margin-left: auto; 
+            border-bottom-right-radius: 8px; 
+        }
+        .chat-bubble-ai { 
+            background-color: var(--bg-dark-secondary); 
+            border-color: var(--border-color); 
+            color: var(--text-primary); 
+            align-self: flex-start; 
+            margin-right: auto; 
+            border-bottom-left-radius: 8px; 
+        }
+        .chat-bubble-ai-initial { 
+            align-self: center; 
+            text-align: center; 
+            max-width: 550px; 
+            background-color: transparent; 
+            border: none; 
+            backdrop-filter: none; 
+            box-shadow: none;
+            color: var(--text-secondary);
+            font-style: italic;
+        }
+        .chat-bubble-ai-wide { max-width: 98%; }
+        
+        .template-block {
+            background-color: var(--template-bg-color);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1.25rem; /* Increased padding */
+            margin-top: 0.5rem;
+            margin-bottom: 0.5rem;
+            max-width: 98%;
+            align-self: flex-start;
+            width: auto; 
+            box-shadow: 0 5px 15px rgba(0,0,0,0.25);
+            position: relative;
+        }
+        .template-block-content {
+            white-space: pre-wrap;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 0.9rem;
+            line-height: 1.5;
+            max-height: 450px; /* Increased max-height */
+            overflow-y: auto;
+            background-color: rgba(0,0,0,0.2); /* Darker background for content */
+            padding: 1rem;
+            border-radius: 8px;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+        .template-block-content h1, .template-block-content h2, .template-block-content h3 {
+            font-family: 'Inter', sans-serif;
+            color: var(--accent-color-light);
+            margin-top: 0.75em;
+            margin-bottom: 0.35em;
+        }
+         .template-block-content h1 { font-size: 1.25em; font-weight: 600; }
+         .template-block-content h2 { font-size: 1.15em; font-weight: 500; }
+         .template-block-content h3 { font-size: 1.05em; font-weight: 500; }
+         .template-block-content strong { font-weight: bold; color: var(--text-primary); }
+         .template-block-content ul, .template-block-content ol { margin-left: 1.5rem; margin-bottom: 0.75rem; }
+         .template-block-content li { margin-bottom: 0.3rem; }
+         .template-block-content table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1.2em 0;
+            font-size: 0.9em;
+         }
+         .template-block-content th, .template-block-content td {
+            border: 1px solid var(--border-color);
+            padding: 0.4rem 0.6rem;
+            text-align: left;
+         }
+         .template-block-content th {
+            background-color: rgba(0, 169, 255, 0.15); /* More prominent header */
+         }
+
+        .copy-template-button {
+            background-color: var(--accent-color);
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem; /* Adjusted padding */
+            border-radius: 8px; 
+            font-size: 0.85rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.2s ease, transform 0.1s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            margin-top: 1rem; /* More space */
+        }
+        .copy-template-button:hover, .copy-template-button:focus-visible {
+            background-color: var(--accent-color-light);
+            outline: none;
+        }
+        .copy-template-button:active {
+            transform: scale(0.95);
+        }
+        .copy-template-button svg {
+            width: 16px; /* Slightly larger icon */
+            height: 16px;
+        }
+        .copy-template-button.copied svg { /* Style for checkmark */
+             width: 16px; height: 16px;
+        }
+
+
+        .chat-input-container { 
+            flex-shrink: 0; 
+            padding-top: 1rem; 
+            max-width: 800px; 
+            width: 100%; 
+            z-index: 5; 
+        }
+        .chat-input-wrapper { 
+            background-color: var(--input-bg-color); 
+            border: 1px solid var(--border-color); 
+            border-radius: 12px; 
+            padding: 0.5rem 0.5rem 0.5rem 1rem; /* Adjusted padding */
+            display: flex; 
+            align-items: flex-end; 
+            gap: 0.5rem; /* Gap between textarea and buttons */
+            transition: border-color 0.2s ease, box-shadow 0.3s ease-out;
+        }
+        .chat-input-wrapper:focus-within {
+            border-color: var(--accent-color);
+            box-shadow: 0 0 10px rgba(0, 169, 255, 0.35);
+        }
+        .chat-input-wrapper.thinking {
+            border-color: var(--accent-color) !important;
+            animation: pulse-input-glow 1.5s infinite;
+        }
+
+        @keyframes pulse-input-glow {
+            0% { box-shadow: 0 0 8px rgba(0, 169, 255, 0.4); }
+            50% { box-shadow: 0 0 18px rgba(0, 169, 255, 0.8); }
+            100% { box-shadow: 0 0 8px rgba(0, 169, 255, 0.4); }
+        }
+
+        .chat-input-wrapper textarea { 
+            background: transparent; 
+            border: none; 
+            outline: none; 
+            width: 100%; 
+            color: var(--text-primary); 
+            font-size: 1rem; 
+            resize: none; 
+            max-height: 150px; 
+            line-height: 1.5; 
+            padding: 0.5rem 0; /* Vertical padding only */
+        }
+        .chat-input-wrapper textarea::placeholder {
+            color: var(--text-secondary);
+            opacity: 0.8;
+            transition: opacity 0.3s ease-out;
+        }
+         .chat-input-wrapper textarea:focus::placeholder {
+            opacity: 0.4;
+        }
+
+
+        .chat-action-buttons {
+            display: flex;
+            align-items: flex-end;
+            gap: 0.5rem; /* Space between buttons */
+        }
+
+        #clearChatButton, #sendButton { 
+            background-color: transparent;
+            border: 1px solid var(--border-color);
+            padding: 0.6rem; 
+            border-radius: 10px; 
+            flex-shrink: 0; 
+            align-self: flex-end; 
+            margin: 4px 0; /* Removed side margin */
+            cursor: pointer;
+            transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease, transform 0.1s ease;
+            color: var(--text-secondary);
+        }
+        #clearChatButton:hover:not(:disabled), #clearChatButton:focus-visible:not(:disabled),
+        #sendButton:hover:not(:disabled), #sendButton:focus-visible:not(:disabled) {
+            background-color: var(--button-hover-bg-color);
+            border-color: var(--accent-color);
+            color: var(--accent-color-light);
+            outline: none;
+        }
+        #clearChatButton:active:not(:disabled), #sendButton:active:not(:disabled) {
+            transform: scale(0.92);
+        }
+
+        #sendButton {
+             background-color: var(--accent-color); 
+             border-color: var(--accent-color);
+             color: white;
+        }
+        #sendButton:hover:not(:disabled), #sendButton:focus-visible:not(:disabled) {
+            background-color: var(--accent-color-light);
+            border-color: var(--accent-color-light);
+            color: var(--bg-dark-primary);
+        }
+
+        #clearChatButton:disabled, #sendButton:disabled { 
+            background-color: #374151; /* Darker disabled state */
+            border-color: #374151;
+            color: #6B7280;
+            cursor: not-allowed; 
+            transform: scale(1);
+        }
+        #clearChatButton svg, #sendButton svg {
+            display: block; 
+            width: 20px; height: 20px;
+        }
+        #sendButton svg { width: 24px; height: 24px; }
+
+
+        #thinking-text-container {
+            text-align: center;
+            margin-bottom: 0.5rem;
+            height: 1.2em; 
+            line-height: 1.2em;
+        }
+        #thinking-text {
+            font-style: italic;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            animation: thinking-text-glow 1.8s ease-in-out infinite;
+        }
+        @keyframes thinking-text-glow { 
+            0%, 100% { opacity: 0.7; } 
+            50% { opacity: 1; } 
+        }
+
+        .disclaimer { 
+            font-size: 0.8rem; /* Slightly larger disclaimer */
+            color: var(--text-secondary); 
+            text-align: center; 
+            padding: 0.75rem; 
+        }
+        .disclaimer a { text-decoration: underline; cursor: pointer; color: var(--accent-color-light); transition: color 0.2s ease; }
+        .disclaimer a:hover, .disclaimer a:focus-visible { color: var(--accent-color); outline:none; }
+        
+        #info-view { 
+            display: none; 
+            height: 100%; /* Fill available height */
+            width: 100%;
+            max-width: 1100px; 
+            overflow-y: auto; 
+            background: transparent; /* Let main-view bg show */
+            border-radius: 0; /* No specific border/bg for the view itself */
+            border: none;
+            padding: 0; /* Padding will be on cards */
+            position: relative; 
+            box-shadow: none;
+        }
+        #info-view::-webkit-scrollbar { display: block; }
+
+        #close-info-button-inner { 
+            position: fixed; /* Fixed relative to viewport when info view is full */
+            top: calc(var(--header-height, 65px) + 1rem); /* Align with header bottom + padding */
+            right: 2rem; 
+            font-size: 2rem; 
+            background: rgba(30, 41, 59, 0.5);
+            backdrop-filter: blur(5px);
+            border-radius: 50%;
+            width: 44px;
+            height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-secondary); 
+            cursor: pointer; 
+            z-index: 1001; /* Above info cards */
+            padding: 0; 
+            line-height: 1;
+            transition: all 0.2s ease;
+            border: 1px solid var(--border-color);
+        }
+        #close-info-button-inner:hover, #close-info-button-inner:focus-visible {
+            color: var(--text-primary);
+            background: rgba(0, 169, 255, 0.2);
+            border-color: var(--accent-color);
+            transform: scale(1.1);
+            outline:none;
+        }
+        
+        .info-card {
+            background-color: var(--card-bg-color);
+            backdrop-filter: blur(8px);
+            border: 1px solid var(--border-color);
+            border-radius: 16px; /* More rounded cards */
+            padding: 2rem; /* Generous padding */
+            margin-bottom: 1.5rem;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+            transition: transform 0.2s ease-out, box-shadow 0.2s ease-out;
+        }
+        .info-card:last-child { margin-bottom: 0; }
+
+
+        .info-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 2.5rem; align-items: flex-start; }
+        .info-grid .info-content-column { display: flex; flex-direction: column; gap: 1.5rem; }
+
+        @media (max-width: 900px) { /* Adjusted breakpoint */
+            .info-grid { grid-template-columns: 1fr; } 
+            #info-view { padding: 0.5rem; } 
+            .info-card { padding: 1.5rem; }
+            #close-info-button-inner {
+                top: 1rem;
+                right: 1rem;
+            }
+        }
+        .info-card h3 { 
+            color: var(--accent-color); 
+            font-weight: 700; /* Bolder headings */
+            font-size: 1.5rem; 
+            margin-top: 0; 
+            margin-bottom: 1rem; 
+            border-bottom: 1px solid var(--border-color); 
+            padding-bottom: 0.75rem; 
+        }
+        .info-card p, .info-card li { font-size: 1rem; color: var(--text-secondary); line-height: 1.75; }
+        .info-card ul { list-style-type: none; padding-left: 0; margin-top: 1rem; }
+        .info-card li { margin-bottom: 0.75rem; padding-left: 1.75rem; position:relative; } 
+        .info-card li::before { 
+            content: '✓'; 
+            color: var(--accent-color); 
+            font-weight: bold; 
+            position: absolute;
+            left: 0;
+            top: 2px;
+            font-size: 1.1em;
+        }
+        .info-card strong { color: var(--text-primary); font-weight: 600;}
+        
+        .about-founder { margin-top: 0; border-top: none; padding-top: 0; } /* Integrated into a card */
+        
+        .info-image-container { 
+            position: sticky; 
+            top: 1.5rem;
+            min-height: 350px; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            justify-content: center; 
+            gap: 1.5rem; 
+            padding: 2rem;
+            background-color: var(--card-bg-color);
+            backdrop-filter: blur(8px);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+        }
+        .info-image-container .logo-svg-placeholder {
+            width: 5.5rem; 
+            height: 5.5rem; 
+            color: var(--accent-color);
+            opacity: 0.9;
+        }
+        .twin-text { 
+            font-size: 3.8rem; 
+            font-weight: 700; 
+            color: var(--text-primary); 
+            text-shadow: 0 0 12px rgba(0, 169, 255, 0.45), 0 0 22px rgba(0, 169, 255, 0.35); 
+        }
+        .orbit-ring { 
+            position: absolute; 
+            border-radius: 50%; 
+            border: 1px solid; 
+            animation: rotate-slow infinite linear; 
+            pointer-events: none; 
+        }
+        .ring1 { width: 220px; height: 220px; border-color: var(--accent-color); animation-duration: 23s; opacity: 0.75; }
+        .ring2 { width: 300px; height: 300px; border-color: var(--accent-color-light); animation-duration: 38s; animation-direction: reverse; opacity: 0.45; border-style: dashed; }
+        .ring3 { width: 380px; height: 380px; border-color: var(--accent-color-dark); animation-duration: 53s; opacity: 0.25; border-style: dotted; }
+        
+        @keyframes rotate-slow { 
+            from { transform: translate(-50%, -50%) rotate(0deg); } 
+            to { transform: translate(-50%, -50%) rotate(360deg); } 
+        }
+        .info-image-container .orbit-ring {
+            top: 50%; 
+            left: 50%; 
+        }
+
+        .privacy-modal-overlay { 
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+            background-color: rgba(10,12,16,0.85); /* Darker overlay */
+            display: none; align-items: center; justify-content: center; 
+            z-index: 10000; /* Ensure above mouse trail and other high z-index elements */
+            padding: 1rem; 
+            opacity: 0;
+            transition: opacity 0.3s ease-in-out;
+        }
+        .privacy-modal-overlay.visible {
+            opacity: 1;
+        }
+        .privacy-modal-content { 
+            background-color: var(--bg-dark-secondary); 
+            color: var(--text-secondary); 
+            padding: 2.5rem; 
+            border-radius: 16px; 
+            border: 1px solid var(--border-color); 
+            max-width: 700px; 
+            width: 100%;
+            max-height: 85vh; 
+            overflow-y: auto; 
+            position: relative; 
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5); /* Stronger shadow */
+            transform: scale(0.95);
+            transition: transform 0.3s ease-in-out;
+        }
+        .privacy-modal-overlay.visible .privacy-modal-content {
+            transform: scale(1);
+        }
+
+        .privacy-modal-content h2 { color: var(--text-primary); font-size: 1.85rem; margin-bottom: 1.5rem; }
+        .privacy-modal-content h3 { color: var(--accent-color); font-size: 1.25rem; margin-top: 1.75rem; margin-bottom: 0.85rem; }
+        .privacy-modal-content p { margin-bottom: 1.1rem; line-height: 1.65; }
+        
+        #close-privacy-button { 
+            position: absolute; 
+            top: 1rem; right: 1rem; 
+            font-size: 2rem; 
+            color: var(--text-secondary); 
+            cursor: pointer; 
+            background: none; 
+            border: none;
+            padding: 0.5rem;
+            line-height: 1;
+            transition: color 0.2s ease, transform 0.2s ease;
+        }
+        #close-privacy-button:hover, #close-privacy-button:focus-visible {
+            color: var(--text-primary);
+            transform: scale(1.1);
+            outline: none;
+        }
+
+        #cookie-banner {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background-color: var(--bg-dark-secondary);
+            padding: 1.5rem;
+            box-shadow: 0 -5px 15px rgba(0,0,0,0.3);
+            z-index: 10001; /* Above privacy modal if somehow privacy modal is shown first, and above mouse trail */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1rem;
+            text-align: center;
+            border-top: 1px solid var(--border-color);
+            transform: translateY(100%);
+            transition: transform 0.5s ease-in-out;
+        }
+        #cookie-banner.visible {
+            transform: translateY(0%);
+        }
+        #cookie-banner p {
+            margin: 0;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            max-width: 600px;
+        }
+        .cookie-buttons {
+            display: flex;
+            gap: 1rem;
+        }
+        #cookie-banner button {
+            background-color: var(--accent-color);
+            color: white;
+            border: none;
+            padding: 0.6rem 1.2rem;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+        }
+        #cookie-banner button:hover {
+            background-color: var(--accent-color-light);
+        }
+        #cookie-banner button#reject-cookies {
+            background-color: var(--button-secondary-bg);
+            border: 1px solid var(--button-secondary-border);
+            color: var(--text-primary);
+        }
+        #cookie-banner button#reject-cookies:hover {
+            background-color: var(--button-hover-bg-color);
+            border-color: var(--accent-color);
+        }
+        @media (min-width: 640px) {
+            #cookie-banner {
+                flex-direction: row;
+                justify-content: center;
+                text-align: left;
+            }
+             #cookie-banner p {
+                max-width: none; /* Allow text to take more space */
+             }
+        }
+
+
+    </style>
+</head>
+<body>
+    <canvas id="dna-background-canvas"></canvas>
+    <div id="mouse-trail"></div>
+
+    <div class="page-wrapper">
+        <header class="header">
+            <a href="#" id="header-title" class="header-title-link" aria-label="Tillbaka till chatten">ByggPilot <span>- Din digitala kollega i byggbranschen</span></a>
+            <div class="header-buttons flex items-center gap-2 md:gap-4">
+                <button id="info-button" aria-label="Läs mer om ByggPilot och dess funktioner">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+                    <span>Så funkar ByggPilot</span>
+                </button>
+                <button id="connect-button" aria-label="Koppla Google Konto för utökad funktionalitet">
+                     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.72"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.72-1.72"></path></svg>
+                    <span>Koppla Konto</span>
+                </button>
+            </div>
+        </header>
+        <div class="main-view">
+            <div id="chat-view">
+                <div id="chatMessages" role="log" aria-live="polite"><div class="chat-messages-inner"></div></div>
+                <div class="chat-input-container" role="form" aria-label="Chattformulär">
+                    <div id="thinking-text-container" style="display: none;" aria-live="polite">
+                        <span id="thinking-text">ByggPilot knegar för fullt...</span>
+                    </div>
+                    <div class="chat-input-wrapper">
+                        <textarea id="userInput" placeholder="Skriv din fråga till ByggPilot..." rows="1" disabled aria-label="Din fråga till ByggPilot"></textarea>
+                        <div class="chat-action-buttons">
+                            <button id="clearChatButton" title="Rensa chatt" aria-label="Rensa chattkonversation" disabled>
+                                <svg aria-hidden="true"><use xlink:href="#icon-trash"></use></svg>
+                            </button>
+                            <button id="sendButton" title="Skicka meddelande" disabled aria-label="Skicka meddelande">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                                    <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"></path>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="disclaimer">
+                        <span id="disclaimer-text" class="block sm:inline">ByggPilot kan göra misstag. Dubbelkolla viktig information.</span>
+                        <a id="privacy-link" class="block sm:inline ml-0 sm:ml-2 mt-1 sm:mt-0" href="#" role="button" aria-label="Läs om din integritet och ByggPilot">Din integritet & ByggPilot</a>
+                    </div>
+                </div>
+            </div>
+            <div id="info-view" role="region" aria-label="Information om ByggPilot">
+                <!-- Content injected by JavaScript -->
+            </div>
+        </div>
+    </div>
+    
+    <div id="privacy-modal" class="privacy-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="privacy-modal-title" style="display: none;">
+        <div class="privacy-modal-content">
+            <button id="close-privacy-button" aria-label="Stäng integritetsdialog">×</button>
+            <h2 id="privacy-modal-title">Din Integritet & ByggPilot</h2>
+            <p>Senast uppdaterad: [Datum för senaste uppdatering]</p>
+            <h3>1. Personuppgiftsansvarig</h3>
+            <p>[Ditt Företagsnamn], org.nr [Ditt Org.nr], adress [Din Adress], är personuppgiftsansvarig för behandlingen av dina personuppgifter.</p>
+            <h3>2. Vilka personuppgifter samlar vi in?</h3>
+            <p>Vi samlar in uppgifter som du själv lämnar till oss, samt data som genereras när du använder ByggPilot.</p>
+            <ul>
+                <li><strong>Grundläggande kontouppgifter:</strong> Namn, e-postadress, telefonnummer, företagsnamn, organisationsnummer (om tillämpligt via Google-koppling eller framtida funktioner).</li>
+                <li><strong>Konversationsdata:</strong> Den information du skriver i chatten med ByggPilot. Denna data används för att ge dig relevanta svar och förbättra ByggPilots förståelse och funktion.</li>
+                <li><strong>Användningsdata:</strong> Hur du interagerar med ByggPilot (t.ex. vilka funktioner som används, klick på knappar) för att vi ska kunna förbättra tjänsten. Denna data är ofta anonymiserad eller aggregerad.</li>
+                <li><strong>Data från kopplade tjänster (med ditt aktiva samtycke):</strong> Om du väljer att koppla ditt konto till tredjepartstjänster som Google (Gmail, Kalender) eller projekthanteringssystem (Bygglet, Fortnox), kommer ByggPilot endast att behandla de uppgifter som är nödvändiga för att utföra den specifika handling du begär. Exempelvis:
+                    <ul>
+                        <li>Gmail: Läsa innehållet i ett specifikt mail du pekar ut för att skapa en arbetsorder.</li>
+                        <li>Google Kalender: Skapa, läsa eller uppdatera kalenderhändelser.</li>
+                    </ul>
+                    ByggPilot kommer aldrig att skanna din inkorg eller kalender utan en direkt instruktion från dig.
+                </li>
+                 <li><strong>Cookies och liknande tekniker:</strong> Vi använder cookies för att säkerställa webbplatsens grundläggande funktionalitet och för att samla in anonym statistik för att förbättra användarupplevelsen. Se vår cookie-information för detaljer.</li>
+            </ul>
+            <h3>3. Varför behandlar vi dina uppgifter (Ändamål och laglig grund)?</h3>
+            <ul>
+                <li><strong>För att leverera tjänsten:</strong> Vi behandlar dina och dina kunders uppgifter (om du anger sådana) för att kunna skapa offerter, arbetsordrar, fakturor och utföra de handlingar du begär. Den lagliga grunden är fullgörande av avtal (när du använder tjänsten accepterar du våra användarvillkor).</li>
+                <li><strong>För att följa lagen:</strong> Vi kan behöva spara viss information, såsom fakturaunderlag (om sådan funktion implementeras), enligt bokföringslagen. Denna rättsliga förpliktelse går före rätten att bli raderad.</li>
+                <li><strong>För att förbättra ByggPilot:</strong> Vi analyserar anonymiserad eller pseudonymiserad användardata för att förstå hur vi kan göra tjänsten bättre. Den lagliga grunden är vårt berättigade intresse att utveckla och förbättra vår tjänst.</li>
+                <li><strong>För att utföra automatiska handlingar:</strong> När du ber ByggPilot boka ett möte eller skapa ett ärende i ett annat system, behandlar vi nödvändiga uppgifter med ditt uttryckliga samtycke som du ger vid varje tillfälle eller vid konfiguration av kopplingen.</li>
+            </ul>
+            <h3>4. Hur länge sparar vi dina uppgifter?</h3>
+            <p>Vi sparar dina personuppgifter så länge du aktivt använder tjänsten eller så länge det är nödvändigt för de ändamål de samlades in för. Konversationshistorik sparas temporärt för att upprätthålla en kontextuell dialog under din session, eller längre om du har ett konto och historiken är en del av tjänsten. Räkenskapsinformation, såsom fakturor (om relevant i framtiden), sparas i 7 år enligt bokföringslagen. Data som hämtats tillfälligt från en kopplad tjänst (t.ex. ett mail) för att utföra en handling sparas inte permanent av ByggPilot efter att handlingen är utförd, om inte annat tydligt framgår.</p>
+            <h3>5. Vilka delar vi dina uppgifter med?</h3>
+            <p>Vi delar aldrig dina uppgifter med tredje part i marknadsföringssyfte utan ditt uttryckliga medgivande. Vi kan dela data med:</p>
+            <ul>
+                <li><strong>Underleverantörer (Personuppgiftsbiträden):</strong> T.ex. leverantörer av AI-modeller (som Google för Gemini API) och serverleverantörer för att lagra data. Vi har avtal (personuppgiftsbiträdesavtal där så krävs) som säkerställer att de hanterar din data säkert och i enlighet med GDPR.</li>
+                <li><strong>Kopplade tjänster:</strong> När du instruerar ByggPilot att interagera med en tjänst som Fortnox eller Google, skickas nödvändig data till den tjänsten via säkra API:er, enligt den tjänstens integritetspolicy och villkor.</li>
+            </ul>
+            <h3>6. Dina rättigheter</h3>
+            <p>Du har rätt att:</p>
+            <ul>
+                <li>Få tillgång till dina personuppgifter (registerutdrag).</li>
+                <li>Få felaktiga uppgifter rättade.</li>
+                <li>Bli raderad ("rätten att bli bortglömd") i de fall där vi inte har en laglig skyldighet att spara uppgifterna (som bokföringslagen).</li>
+                <li>Begränsa behandlingen av dina uppgifter under vissa omständigheter.</li>
+                <li>Invända mot behandling som stödjer sig på berättigat intresse.</li>
+                <li>Dataportabilitet, om tillämpligt.</li>
+            </ul>
+            <p>För att utöva dina rättigheter, kontakta oss på [Din e-post för dataskyddsfrågor]. Du har även rätt att lämna in ett klagomål till Integritetsskyddsmyndigheten (IMY).</p>
+            <h3>Ansvarsfriskrivning och AI:ns Begränsningar</h3>
+            <p><strong>Viktigt:</strong> ByggPilot är ett avancerat stödverktyg, inte en ersättning för professionell, mänsklig expertis. Svaren som genereras kan innehålla fel, felaktigheter eller vara inaktuella. All information, särskilt gällande kalkyler, lagtexter och riskanalyser, måste <strong>alltid dubbelkollas och verifieras av en kvalificerad person.</strong> Användning sker helt på egen risk. ByggPilot och dess utvecklare frånsäger sig allt ansvar för eventuella konsekvenser som uppstår vid användning av informationen som tillhandahålls.</p>
+        </div>
+    </div>
+
+    <div id="cookie-banner" role="complementary" aria-label="Cookie-information">
+        <p>Vi använder cookies för att få ByggPilot att fungera smidigt och för att förstå hur du använder sidan, så vi kan göra den ännu bättre. Godkänner du detta?</p>
+        <div class="cookie-buttons">
+            <button id="accept-cookies">Godkänn alla</button>
+            <button id="reject-cookies">Endast nödvändiga</button>
+        </div>
+    </div>
+
+    <svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
+      <symbol id="icon-copy" viewBox="0 0 24 24">
+        <path fill="currentColor" d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/>
+      </symbol>
+      <symbol id="icon-trash" viewBox="0 0 24 24">
+        <path fill="currentColor" d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zm2.5-8.5h7V12h-7V10.5zm0 3h7V15h-7v-1.5zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
+      </symbol>
+       <symbol id="icon-byggpilot-logo" viewBox="0 0 64 64">
+        <!-- Helmet Dome -->
+        <path fill="currentColor" d="M32,10 C18.745,10 10,18.745 10,32 C10,39.213904 13.568261,45.437988 18.535217,49.831055 L16.000000,54.000000 L48.000000,54.000000 L45.464783,49.831055 C50.431739,45.437988 54,39.213904 54,32 C54,18.745 45.255,10 32,10 Z M32,14 C43.046,14 50,20.954 50,30 C50,31.0211151 49.894348,32.0006517 49.704285,32.937012 L32,22 L14.295715,32.937012 C14.105652,32.0006517 14,31.0211151 14,30 C14,20.954 20.954,14 32,14 Z"/>
+        <!-- Helmet Brim -->
+        <path d="M8 46 Q32 40 56 46" stroke="currentColor" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+        <!-- Wings -->
+        <path fill="currentColor" d="M12 34 Q4 30 12 22 L17 25 Q10 30 17 33 Z" />
+        <path fill="currentColor" d="M52 34 Q60 30 52 22 L47 25 Q54 30 47 33 Z" />
+      </symbol>
+    </svg>
+
+    <script type="importmap">
 {
   "imports": {
-    "@google/genai": "https://esm.sh/@google/genai@^1.5.1",
-    "marked": "https://esm.sh/marked@^15.0.12"
+    "@google/genai": "https://esm.sh/@google/genai@^0.14.0",
+    "marked": "https://esm.sh/marked@^15.0.12" 
   }
 }
 </script>
-</head>
-<body class="bg-slate-900 text-slate-100 font-sans flex flex-col min-h-screen">
-
-    <main class="container mx-auto p-4 flex-grow flex flex-col items-center w-full">
-        <header class="text-center mb-6 mt-4">
-            <h1 class="text-5xl font-bold text-sky-400">
-                Bygg<span class="text-sky-600">Pilot</span>
-                <span role="img" aria-label="Construction worker icon" class="inline-block ml-2 text-4xl">🧑‍🔧</span>
-            </h1>
-            <p class="text-lg text-slate-400">Din digitala kollega i byggbranschen</p>
-        </header>
-        <section class="w-full max-w-4xl flex flex-col gap-8">
-            <div class="bg-slate-800 rounded-2xl p-6 shadow-lg mb-4 relative">
-                <button id="close-info-button-inner" aria-label="Stäng informationsvyn" class="absolute top-4 right-4 z-10 bg-slate-700 text-sky-400 rounded-full w-8 h-8 flex items-center justify-center text-2xl hover:bg-sky-800 focus:outline-none focus:ring-2 focus:ring-sky-500">&times;</button>
-                <h2 class="text-2xl sm:text-3xl font-bold text-sky-300 mb-3">Trött på papperskaos och kvällsadmin?</h2>
-                <p class="mb-4 text-base sm:text-lg leading-relaxed text-slate-200">ByggPilot är inte bara en chatt. Det är din mest effektiva medarbetare, skapad av hantverkare för hantverkare. Vi vet att din tid är värdefull och att planering och förarbete är avgörande för ett lyckat projekt.</p>
-                <ul class="space-y-3">
-                    <li class="flex items-start gap-2"><span class="mt-1 text-sky-400">•</span><span><span class="font-semibold text-sky-200">Fråga inte bara – få det gjort.</span></span></li>
-                    <li class="flex items-start gap-2"><span class="mt-1 text-sky-400">→</span><span class="font-semibold">Istället för att fråga hur du skriver en offert, säg:</span></li>
-                    <li class="ml-8 italic text-sky-200">"Skapa en proffsig offert för badrumsrenovering hos Svensson på Storgatan 5. Inkludera 15% påslag på material från Ahlsell och räkna med ROT."</li>
-                    <li class="flex items-start gap-2"><span class="mt-1 text-sky-400">→</span><span class="font-semibold">Istället för att undra över ett krångligt projekt, säg:</span></li>
-                    <li class="ml-8 italic text-sky-200">"Ge mig en checklista och riskanalys för att bila ett betonggolv i en källare. Fokusera på dammhantering och säkerhet."</li>
-                </ul>
-            </div>
-            <div class="bg-slate-800 rounded-2xl p-6 shadow-lg mb-4">
-                <h2 class="text-2xl sm:text-3xl font-bold text-sky-300 mb-3">Visionen: Din automatiska projektledare</h2>
-                <p class="mb-4 text-base sm:text-lg leading-relaxed text-slate-200">Vi bygger ByggPilot för att den ska göra jobbet åt dig. Framtiden är inte att du ber en AI om information. Framtiden är att du säger: <br><span class="italic text-sky-200">"Läs det senaste mailet från Berg & Betong, skapa ett ärende i t.ex. Google Workspace och boka ett uppföljningsmöte i min kalender nästa vecka."</span></p>
-                <p class="mb-2 text-base sm:text-lg leading-relaxed text-slate-200">Koppla ditt konto och upptäck hur många timmar du kan spara – varje vecka.</p>
-            </div>
-            <div class="bg-slate-800 rounded-2xl p-6 shadow-lg mb-4">
-                <h2 class="text-2xl sm:text-3xl font-bold text-sky-300 mb-3">En byggares vision: Varför ByggPilot finns</h2>
-                <p class="mb-4 text-base sm:text-lg leading-relaxed text-slate-200">ByggPilot föddes ur ren frustration. Efter 15 år i byggbranschens alla led – från snickarlärling till att driva eget med allt vad det innebär av sena kvällar med pappersarbete – såg grundaren Michael Fogelström Ekengren samma mönster överallt: Fantastiska hantverkare som drunknade i administration. Verktyg som lovade guld och gröna skogar men som var för krångliga, för dyra eller helt enkelt inte anpassade för verkligheten ute på fältet.</p>
-                <p class="mb-2 text-base sm:text-lg leading-relaxed text-slate-200">Den frustrationen blev en vision: Tänk om man kunde skapa en digital kollega – och dessutom finns tillgänglig hela tiden i fickan. En expert som förstår byggbranschen på djupet, som kan hantera allt från en snabb ÄTA-hantering till att jaga in underlag, och som frigör tid så att hantverkare kan göra det de är bäst på – att bygga.</p>
-                <p class="text-base sm:text-lg leading-relaxed text-slate-200"><strong>Grundare:</strong> Michael Fogelström Ekengren</p>
-            </div>
-        </section>
-        <!-- React hanterar chatt och info-modal -->
-    </main>
-
-    <div id="cookie-banner" class="fixed bottom-0 left-0 right-0 bg-slate-950 text-slate-200 p-4 flex flex-col sm:flex-row items-center justify-between shadow-lg border-t border-slate-700 z-40 opacity-0 invisible transition-opacity duration-300 ease-in-out">
-        <p class="mr-0 sm:mr-4 mb-2 sm:mb-0 text-sm">Vi använder cookies för att spara din chathistorik lokalt och förbättra din upplevelse. Genom att fortsätta använda sidan godkänner du detta.</p>
-        <button id="accept-cookies-button" class="bg-sky-600 hover:bg-sky-500 text-white font-semibold py-2 px-4 rounded-md transition-colors text-sm whitespace-nowrap">Jag förstår</button>
-    </div>
-
     <script type="module" src="index.js"></script>
 </body>
 </html>

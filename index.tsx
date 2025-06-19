@@ -1,3 +1,4 @@
+
 /**
  * @license
  * Copyright 2025 Google LLC
@@ -16,7 +17,7 @@ declare var process: {
   
   const GEMINI_MODEL_NAME = "gemini-2.5-flash-preview-04-17";
   
-  // --- SYSTEMPROMPT FÖR BYGGPILOT ---
+  // --- SYSTEMPROMPT FÖR BYGGPILOT (Updated with new instructions) ---
   const systemPromptText = `
   Master-Prompt för AI-assistenten "ByggPilot"
   1. Kärnpersonlighet & Tonfall
@@ -41,7 +42,7 @@ declare var process: {
   Djupgående Branschkunskap: Du är expert på den svenska bygg- och installationsbranschen (bygg, el, VVS, etc.). Din kunskap omfattar:
   Regelverk: PBL, BBR, Elsäkerhetsverkets föreskrifter, Säker Vatten.
   Avtal: AB 04, ABT 06, Hantverkarformuläret 17.
-  Administration: ROT-avdrag (inkl. 2025), omvänd byggmoms, ÄTA-hantering.
+  Administration: ROT-avdrag (inkl. 2025), omvänd byggmoms, ÄTA-hantering, AMA beskrivningsverktyg mm.
   Praktiskt Arbete: Du kan skapa specifika checklistor, egenkontroller, riskanalyser och KMA-planer enligt den struktur som beskrivs nedan.
   Kalkylering och Prisuppgifter:
   När du blir ombedd att skapa en offert eller kalkyl, ställ relevanta följdfrågor (t.ex., "Ska smygar, foder, skruv och drev inkluderas i kalkylen för fönsterbytet?").
@@ -67,10 +68,9 @@ declare var process: {
   6. Etik & Begränsningar
   Du ger aldrig finansiell, juridisk eller skatteteknisk rådgivning. Du presenterar information baserat på gällande regler men uppmanar alltid användaren att konsultera en mänsklig expert (revisor, jurist) för slutgiltiga beslut.
   Du hanterar all data med högsta sekretess och agerar aldrig på data utan en explicit instruktion.
-  Du svarar enbart på svenska. Om användaren skriver på ett annat språk, be dem vänligt att formulera sin fråga på svenska.
   `;
   
-  const systemInstructionContent: Content = { // Renamed from systemInstruction to avoid conflict with variable name in class
+  const systemInstructionContent: Content = {
       role: "system",
       parts: [{ text: systemPromptText }],
   };
@@ -78,28 +78,50 @@ declare var process: {
   interface UIElements {
       chatWindow: HTMLElement;
       chatForm: HTMLFormElement;
-      chatInput: HTMLInputElement;
+      chatInput: HTMLTextAreaElement; 
       sendButton: HTMLButtonElement;
       infoButton: HTMLElement;
       infoView: HTMLElement;
-      closeInfoButton: HTMLElement;
+      closeInfoButton: HTMLElement; 
       cookieBanner: HTMLElement;
       acceptCookiesButton: HTMLElement;
       typingIndicator: HTMLElement;
+      privacyLink: HTMLElement;
+      connectButton: HTMLButtonElement;
+      privacyModal: HTMLElement;
+      closePrivacyButton: HTMLButtonElement;
   }
   
   class ByggPilotApp {
       private ui: UIElements;
-      private ai: GoogleGenAI;
+      private ai?: GoogleGenAI; // Optional if API key is missing
       private chat?: Chat;
       private isLoading: boolean = false;
       private currentModelMessageElement: HTMLElement | null = null;
       private chatHistory: Content[] = [];
+      private isApiKeyMissing: boolean = false;
   
       constructor() {
           this.ui = this.getUIElements();
+  
+          if (!process.env.API_KEY || process.env.API_KEY.trim() === "") {
+              this.isApiKeyMissing = true;
+              console.error("API_KEY is missing or empty. ByggPilot chat functionality will be disabled.");
+              this.displayMessage("API-nyckel saknas eller är tom. ByggPilot kan inte starta chatten.", false, true);
+              this.ui.chatInput.value = "";
+              this.ui.chatInput.placeholder = "Chatt недоступен: API-nyckel saknas.";
+              this.ui.chatInput.disabled = true;
+              this.ui.sendButton.disabled = true;
+              this.ui.sendButton.classList.add("opacity-50", "cursor-not-allowed");
+              if (this.ui.typingIndicator) this.ui.typingIndicator.style.display = "none";
+              
+              // Still setup non-chat event listeners
+              this.setupNonChatEventListeners();
+              this.checkCookieConsent(); // Allow cookie interaction
+              return; 
+          }
+          
           this.ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-          this.loadChatHistory();
           this.init();
       }
   
@@ -107,115 +129,190 @@ declare var process: {
           return {
               chatWindow: document.getElementById("chat-window")!,
               chatForm: document.getElementById("chat-form") as HTMLFormElement,
-              chatInput: document.getElementById("chat-input") as HTMLInputElement,
-              sendButton: document.getElementById("send-button") as HTMLButtonElement,
+              chatInput: document.getElementById("userInput") as HTMLTextAreaElement, 
+              sendButton: document.getElementById("sendButton") as HTMLButtonElement, 
               infoButton: document.getElementById("info-button")!,
               infoView: document.getElementById("info-view")!,
-              closeInfoButton: document.getElementById("close-info-button")!,
+              closeInfoButton: document.getElementById("close-info-button") as HTMLButtonElement, 
               cookieBanner: document.getElementById("cookie-banner")!,
-              acceptCookiesButton: document.getElementById("accept-cookies-button")!,
-              typingIndicator: document.getElementById("typing-indicator")!,
+              acceptCookiesButton: document.getElementById("accept-cookies-button") as HTMLButtonElement, 
+              typingIndicator: document.getElementById("typing-indicator")!, 
+              privacyLink: document.getElementById("privacy-link") as HTMLElement,
+              connectButton: document.getElementById("connect-button") as HTMLButtonElement,
+              privacyModal: document.getElementById("privacy-modal") as HTMLElement,
+              closePrivacyButton: document.getElementById("close-privacy-button") as HTMLButtonElement,
           };
       }
   
       private async init(): Promise<void> {
-          this.setupEventListeners();
+          this.setupEventListeners(); // All event listeners
           this.checkCookieConsent();
           
-          // Restore previous chat messages if any
+          this.loadChatHistory(); 
+          
           this.chatHistory.forEach(message => {
-              if (message.role === 'user' && message.parts[0].text) {
+              if (message.role === 'user' && message.parts[0]?.text) {
                   this.displayMessage(message.parts[0].text, true);
-              } else if (message.role === 'model' && message.parts[0].text) {
+              } else if (message.role === 'model' && message.parts[0]?.text) {
                   this.displayMessage(message.parts[0].text, false);
               }
           });
   
-          if (this.chatHistory.length === 0) {
-             this.displayInitialGreeting();
+          if (this.chatHistory.length === 0 && !this.isApiKeyMissing) { // Don't show greeting if API key is missing
+             this.displayInitialGreeting(); 
           }
           
-          await this.initializeChat();
+          if (!this.isApiKeyMissing && this.ai) { // Ensure AI is initialized
+              await this.initializeChat(); 
+              this.ui.chatInput.disabled = false;
+              this.ui.sendButton.disabled = false;
+          } else if (!this.ai && !this.isApiKeyMissing) {
+              // This case should ideally not be reached if constructor logic is sound
+              console.error("AI instance not created despite API key supposedly present.");
+              this.displayMessage("Ett oväntat fel inträffade vid initiering av AI-klienten.", false, true);
+          }
       }
   
       private async initializeChat(): Promise<void> {
+          if (!this.ai) {
+              console.error("Attempted to initialize chat without AI instance.");
+              this.displayMessage("Internt fel: AI-klienten är inte tillgänglig.", false, true);
+              return;
+          }
+          this.setLoading(true); 
           try {
+              let historyForApiCreation: Content[] = [];
+              if (this.chatHistory.length > 0 && this.chatHistory[0]?.role === 'user') {
+                  historyForApiCreation = [...this.chatHistory];
+              }
+  
               this.chat = this.ai.chats.create({
                   model: GEMINI_MODEL_NAME,
                   config: {
                       systemInstruction: systemInstructionContent,
                   },
-                  history: [...this.chatHistory], // Start with loaded history
+                  history: historyForApiCreation, 
               });
           } catch (error) {
               console.error("Kunde inte initiera chatten:", error);
               this.displayMessage("Ursäkta, jag har lite problem med att starta upp just nu. Försök ladda om sidan.", false, true);
-              this.setLoading(false);
+          } finally {
+              this.setLoading(false); 
           }
       }
       
       private displayInitialGreeting(): void {
-          const greeting = "Hej! ByggPilot här, din digitala kollega. Vad kan jag hjälpa dig med idag?";
+          const greeting = "Hej! Jag är ByggPilot, din digitala kollega. Vad kan jag hjälpa dig med idag?";
           this.displayMessage(greeting, false);
-          // Only add to history if it's not already the last message (e.g. from loaded history)
-          if (!(this.chatHistory.length > 0 && this.chatHistory[this.chatHistory.length -1].role === 'model' && this.chatHistory[this.chatHistory.length -1].parts[0].text === greeting)) {
-              this.chatHistory.push({ role: "model", parts: [{ text: greeting }] });
-              this.saveChatHistory();
-          }
       }
   
-  
-      private setupEventListeners(): void {
-          this.ui.chatForm.addEventListener("submit", this.handleFormSubmit.bind(this));
+      private setupNonChatEventListeners(): void {
+          // Listeners that should work even if chat is disabled (e.g. API key missing)
           this.ui.infoButton.addEventListener("click", this.showInfoView.bind(this));
           this.ui.closeInfoButton.addEventListener("click", this.hideInfoView.bind(this));
           this.ui.acceptCookiesButton.addEventListener("click", this.acceptCookies.bind(this));
+          this.ui.privacyLink.addEventListener("click", this.showPrivacyModal.bind(this));
+          this.ui.closePrivacyButton.addEventListener("click", this.hidePrivacyModal.bind(this));
+          this.ui.connectButton.addEventListener("click", this.handleConnectAccount.bind(this));
           
-          // Close modal if clicking outside of it
+          this.ui.privacyModal.addEventListener('click', (event) => {
+              if (event.target === this.ui.privacyModal) { 
+                  this.hidePrivacyModal();
+              }
+          });
           this.ui.infoView.addEventListener('click', (event) => {
-              if (event.target === this.ui.infoView) {
+              if (event.target === this.ui.infoView) { 
                   this.hideInfoView();
               }
           });
       }
   
+      private setupEventListeners(): void {
+          this.setupNonChatEventListeners(); // Setup common listeners
+  
+          // Chat specific listeners, only add if API key is NOT missing
+          if (!this.isApiKeyMissing) {
+              this.ui.chatForm.addEventListener("submit", this.handleFormSubmit.bind(this));
+              this.ui.chatInput.addEventListener('input', () => {
+                  this.ui.chatInput.style.height = 'auto';
+                  this.ui.chatInput.style.height = `${this.ui.chatInput.scrollHeight}px`;
+              });
+              this.ui.chatInput.addEventListener('keydown', (event) => {
+                  if (event.key === 'Enter' && !event.shiftKey) {
+                      event.preventDefault();
+                      this.ui.chatForm.requestSubmit();
+                  }
+              });
+          }
+      }
+  
       private showInfoView(): void {
           this.ui.infoView.classList.remove("invisible", "opacity-0");
           this.ui.infoView.classList.add("opacity-100");
-          (this.ui.infoView.firstElementChild as HTMLElement).classList.remove("scale-95");
-          (this.ui.infoView.firstElementChild as HTMLElement).classList.add("scale-100");
+          const contentWrapper = this.ui.infoView.firstElementChild as HTMLElement;
+          if (contentWrapper) {
+              contentWrapper.classList.remove("scale-95", "opacity-0");
+              contentWrapper.classList.add("scale-100", "opacity-100");
+          }
           this.ui.closeInfoButton.focus();
+          document.body.style.overflow = 'hidden'; 
       }
   
       private hideInfoView(): void {
           this.ui.infoView.classList.add("opacity-0");
-          (this.ui.infoView.firstElementChild as HTMLElement).classList.add("scale-95");
-          (this.ui.infoView.firstElementChild as HTMLElement).classList.remove("scale-100");
+          const contentWrapper = this.ui.infoView.firstElementChild as HTMLElement;
+          if (contentWrapper) {
+              contentWrapper.classList.add("scale-95", "opacity-0");
+              contentWrapper.classList.remove("scale-100", "opacity-100");
+          }
           setTimeout(() => {
               this.ui.infoView.classList.add("invisible");
-          }, 300); // Match transition duration
+          }, 300); 
+          document.body.style.overflow = ''; 
       }
+  
+      private showPrivacyModal(event?: Event): void {
+          if (event) event.preventDefault();
+          this.ui.privacyModal.classList.add("visible");
+          this.ui.closePrivacyButton.focus();
+          document.body.style.overflow = 'hidden';
+      }
+  
+      private hidePrivacyModal(): void {
+          this.ui.privacyModal.classList.remove("visible");
+          document.body.style.overflow = '';
+      }
+      
+      private handleConnectAccount(event: Event): void {
+          event.preventDefault();
+          console.log("Connect Account button clicked. Functionality to be implemented based on server status.");
+          alert("Funktionen 'Koppla Konto' är under utveckling. När serverintegrationerna är aktiva kommer du kunna koppla ditt Google-konto här för utökad funktionalitet som e-posthantering och kalenderbokningar.");
+      }
+  
   
       private checkCookieConsent(): void {
           if (localStorage.getItem("byggPilotCookiesAccepted") !== "true") {
               this.ui.cookieBanner.classList.remove("invisible", "opacity-0");
-               this.ui.cookieBanner.classList.add("opacity-100");
+              this.ui.cookieBanner.classList.add("opacity-100"); 
           }
       }
   
       private acceptCookies(): void {
           localStorage.setItem("byggPilotCookiesAccepted", "true");
+          this.ui.cookieBanner.classList.remove("opacity-100");
           this.ui.cookieBanner.classList.add("opacity-0");
           setTimeout(() => {
               this.ui.cookieBanner.classList.add("invisible");
-          }, 300);
+          }, 500); 
       }
   
       private setLoading(isLoading: boolean): void {
+          if (this.isApiKeyMissing) return; // Don't change loading state if API key is missing
+  
           this.isLoading = isLoading;
           this.ui.chatInput.disabled = isLoading;
           this.ui.sendButton.disabled = isLoading;
-          this.ui.typingIndicator.style.display = isLoading ? "flex" : "none";
+          this.ui.typingIndicator.style.display = isLoading ? "flex" : "none"; 
           if (isLoading) {
               this.ui.sendButton.classList.add("opacity-50", "cursor-not-allowed");
           } else {
@@ -225,7 +322,7 @@ declare var process: {
   
       private displayMessage(message: string, isUser: boolean, isError: boolean = false): void {
           const messageWrapper = document.createElement("div");
-          messageWrapper.classList.add("message-wrapper", "flex", "mb-4", "max-w-full");
+          messageWrapper.classList.add("message-wrapper", "flex", "mb-4", "max-w-full", "px-1"); 
   
           const messageElement = document.createElement("div");
           messageElement.classList.add(
@@ -234,57 +331,50 @@ declare var process: {
               "rounded-lg", 
               "shadow-md", 
               "max-w-[85%]", 
-              "break-words"
+              "break-words" 
           );
   
           if (isUser) {
-              messageElement.classList.add("bg-sky-700", "text-white", "ml-auto", "user-message");
+              messageElement.classList.add("bg-sky-700", "text-white", "ml-auto", "user-message", "rounded-br-none"); 
           } else {
-              messageElement.classList.add("bg-slate-700", "text-slate-200", "mr-auto", "model-message");
+              messageElement.classList.add("bg-slate-700", "text-slate-200", "mr-auto", "model-message", "rounded-bl-none"); 
           }
   
           if (isError) {
               messageElement.classList.remove("bg-slate-700");
-              messageElement.classList.add("bg-red-500", "text-white");
+              messageElement.classList.add("bg-red-600", "text-white"); 
           }
           
           const senderSpan = document.createElement("strong");
-          senderSpan.classList.add("block", "text-sm", "mb-1", isUser ? "text-sky-200" : "text-sky-400");
+          senderSpan.classList.add("block", "text-xs", "mb-1", isUser ? "text-sky-200" : "text-sky-400"); 
           senderSpan.textContent = isUser ? "Du" : "ByggPilot";
           
           messageElement.appendChild(senderSpan);
   
+          const contentDiv = document.createElement('div');
+          contentDiv.classList.add("message-content"); 
           if (!isUser) {
-              // Render Markdown for model messages
-              const contentDiv = document.createElement('div');
               contentDiv.innerHTML = marked.parse(message) as string;
-              messageElement.appendChild(contentDiv);
           } else {
-              // For user messages, create a text node to prevent self-XSS if user inputs HTML/Markdown
               const textNode = document.createTextNode(message);
-              const contentDiv = document.createElement('div'); // Still use a div for consistency if needed
               contentDiv.appendChild(textNode);
-              messageElement.appendChild(contentDiv);
           }
+          messageElement.appendChild(contentDiv);
           
           messageWrapper.appendChild(messageElement);
           this.ui.chatWindow.appendChild(messageWrapper);
           this.scrollToBottom();
   
-          if (!isUser && !this.isLoading) { 
-               this.currentModelMessageElement = messageElement; 
+          if (!isUser) { 
+               this.currentModelMessageElement = contentDiv; 
           }
       }
       
       private appendToCurrentModelMessage(chunkText: string): void {
           if (this.currentModelMessageElement) {
-              // The contentDiv is the second child (after senderSpan)
-              const contentDiv = this.currentModelMessageElement.children[1] as HTMLElement;
-              if (contentDiv) {
-                  let currentText = this.getTextFromHtml(contentDiv.innerHTML);
-                  contentDiv.innerHTML = marked.parse(currentText + chunkText) as string;
-                  this.scrollToBottom();
-              }
+              let currentText = this.getTextFromHtml(this.currentModelMessageElement.innerHTML);
+              this.currentModelMessageElement.innerHTML = marked.parse(currentText + chunkText) as string;
+              this.scrollToBottom();
           }
       }
   
@@ -294,10 +384,9 @@ declare var process: {
           return tempDiv.textContent || tempDiv.innerText || "";
       }
   
-  
       private async handleFormSubmit(event: Event): Promise<void> {
           event.preventDefault();
-          if (this.isLoading) return;
+          if (this.isLoading || this.isApiKeyMissing) return;
   
           const userMessage = this.ui.chatInput.value.trim();
           if (!userMessage) return;
@@ -307,35 +396,19 @@ declare var process: {
           this.saveChatHistory();
           
           this.ui.chatInput.value = "";
+          this.ui.chatInput.style.height = 'auto'; 
           this.setLoading(true);
   
-          this.currentModelMessageElement = null; 
-          const modelMessageWrapper = document.createElement("div");
-          modelMessageWrapper.classList.add("message-wrapper", "flex", "mb-4", "max-w-full");
-          
-          const modelMessageElement = document.createElement("div");
-          modelMessageElement.classList.add("message", "p-3", "rounded-lg", "shadow-md", "max-w-[85%]", "break-words", "bg-slate-700", "text-slate-200", "mr-auto", "model-message");
-          
-          const senderSpan = document.createElement("strong");
-          senderSpan.classList.add("block", "text-sm", "mb-1", "text-sky-400");
-          senderSpan.textContent = "ByggPilot";
-          modelMessageElement.appendChild(senderSpan);
-  
-          const contentDiv = document.createElement('div'); 
-          modelMessageElement.appendChild(contentDiv);
-          
-          modelMessageWrapper.appendChild(modelMessageElement);
-          this.ui.chatWindow.appendChild(modelMessageWrapper);
-          this.currentModelMessageElement = contentDiv; 
-  
+          this.displayMessage("", false); 
           this.scrollToBottom();
-  
   
           try {
               if (!this.chat) {
+                  console.warn("Chat not initialized. Attempting to re-initialize.");
                   await this.initializeChat(); 
-                  if (!this.chat) {
-                       throw new Error("Chat could not be initialized.");
+                  if (!this.chat) { 
+                       this.displayMessage("Chat-sessionen är inte aktiv. Prova att ladda om sidan.", false, true);
+                       throw new Error("Chat could not be initialized despite re-attempt.");
                   }
               }
   
@@ -345,13 +418,17 @@ declare var process: {
                   const chunkText = chunk.text;
                   if (chunkText) {
                       fullResponseText += chunkText;
-                      if (this.currentModelMessageElement) {
+                      if (this.currentModelMessageElement) { 
                          this.currentModelMessageElement.innerHTML = marked.parse(fullResponseText) as string;
                          this.scrollToBottom();
                       }
                   }
               }
-              // Ensure chatHistory has the correct role and full response
+              if(this.currentModelMessageElement && fullResponseText === "") { 
+                  const emptyResponseText = "Jag kunde inte generera ett svar just nu. Försök att omformulera din fråga.";
+                  this.currentModelMessageElement.innerHTML = marked.parse(emptyResponseText) as string;
+                  fullResponseText = emptyResponseText; 
+              }
               this.chatHistory.push({ role: "model", parts: [{ text: fullResponseText }] });
               this.saveChatHistory();
   
@@ -359,15 +436,17 @@ declare var process: {
               console.error("Fel vid anrop till Gemini API:", error);
               const errorText = "Ursäkta, ett tekniskt fel inträffade när jag skulle svara. Försök igen om en liten stund.";
               if (this.currentModelMessageElement && this.currentModelMessageElement.parentElement) {
-                   this.currentModelMessageElement.parentElement.classList.remove("bg-slate-700");
-                   this.currentModelMessageElement.parentElement.classList.add("bg-red-500", "text-white");
+                   const messageBubble = this.currentModelMessageElement.parentElement;
+                   messageBubble.classList.remove("bg-slate-700");
+                   messageBubble.classList.add("bg-red-600", "text-white"); 
                    this.currentModelMessageElement.innerHTML = marked.parse(errorText) as string;
-              } else {
+              } else { 
                    this.displayMessage(errorText, false, true);
               }
-               // Add error message to history to reflect it in UI upon reload
-              this.chatHistory.push({ role: "model", parts: [{ text: errorText }] });
-              this.saveChatHistory();
+              if (!this.chatHistory.find(m => m.parts[0].text === errorText && m.role === 'model')) {
+                  this.chatHistory.push({ role: "model", parts: [{ text: errorText }] });
+                  this.saveChatHistory();
+              }
           } finally {
               this.setLoading(false);
               this.currentModelMessageElement = null; 
@@ -382,19 +461,28 @@ declare var process: {
       private saveChatHistory(): void {
           if (localStorage.getItem("byggPilotCookiesAccepted") === "true") {
               try {
-                  // Ensure all parts in history are valid before saving
-                  const validHistory = this.chatHistory.filter(item => item.parts && item.parts[0] && typeof item.parts[0].text === 'string');
+                  const validHistory = this.chatHistory.filter(item => 
+                      item.role && 
+                      item.parts && 
+                      Array.isArray(item.parts) && 
+                      item.parts.length > 0 && 
+                      typeof item.parts[0].text === 'string'
+                  );
                   localStorage.setItem("byggPilotChatHistory", JSON.stringify(validHistory));
               } catch (e) {
                   console.warn("Could not save chat history, possibly full:", e);
-                  // Maybe clear older history parts if it's too full
                   if (e instanceof DOMException && e.name === 'QuotaExceededError') {
-                      // Attempt to clear some older history and retry
-                      if (this.chatHistory.length > 10) { // Keep at least some history
-                          this.chatHistory.splice(0, this.chatHistory.length - 10); // Remove older items
+                      if (this.chatHistory.length > 10) { 
+                          const truncatedHistory = this.chatHistory.slice(this.chatHistory.length - 10);
+                          const validTruncatedHistory = truncatedHistory.filter(item => 
+                              item.role && 
+                              item.parts && 
+                              Array.isArray(item.parts) && 
+                              item.parts.length > 0 && 
+                              typeof item.parts[0].text === 'string'
+                          );
                           try {
-                               const validHistory = this.chatHistory.filter(item => item.parts && item.parts[0] && typeof item.parts[0].text === 'string');
-                               localStorage.setItem("byggPilotChatHistory", JSON.stringify(validHistory));
+                               localStorage.setItem("byggPilotChatHistory", JSON.stringify(validTruncatedHistory));
                           } catch (e2) {
                               console.error("Failed to save history even after reducing size:", e2);
                           }
@@ -410,7 +498,6 @@ declare var process: {
               if (storedHistory) {
                   try {
                       const parsedHistory = JSON.parse(storedHistory) as Content[];
-                      // Filter out any potentially invalid entries from old storage
                       this.chatHistory = parsedHistory.filter(item => 
                           item.role && 
                           item.parts && 
@@ -426,9 +513,11 @@ declare var process: {
                   } catch (e) {
                       console.error("Could not parse chat history:", e);
                       this.chatHistory = [];
-                      localStorage.removeItem("byggPilotChatHistory"); // Clear corrupted history
+                      localStorage.removeItem("byggPilotChatHistory"); 
                   }
               }
+          } else {
+              this.chatHistory = []; 
           }
       }
   }
