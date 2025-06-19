@@ -2,6 +2,7 @@
 import React from 'react';
 import { useState, useEffect, useRef } from 'react';
 import Head from 'next/head';
+import ChatWidget from '../components/ChatWidget';
 
 type Message = {
   role: 'user' | 'model';
@@ -14,6 +15,7 @@ export default function Home() {
     const [userInput, setUserInput] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [isInfoView, setIsInfoView] = useState(false);
+    const [useWidget, setUseWidget] = useState(true);
     const chatEndRef = useRef<HTMLDivElement>(null);
 
     const scrollToBottom = () => {
@@ -118,14 +120,20 @@ export default function Home() {
             <div id="nerve-background"></div>
             <main className="flex flex-col h-screen text-white p-4">
                 <header className="flex justify-between items-center p-4">
-                    <h1 className="text-xl font-bold">ByggPilot <span className="text-base font-normal italic text-gray-400">- Din digitala kollega i byggbranschen</span></h1>
-                    <div className="flex gap-4">
-                        <button onClick={() => setIsInfoView(true)} className="bg-[rgba(42,54,78,0.7)] backdrop-blur-sm border border-[#374151] px-4 py-2 rounded-lg hover:border-[#00A9FF] transition-colors">Info & Hjälp</button>
-                        <button onClick={() => alert("Koppla konto-funktion kommer snart!")} className="bg-[rgba(42,54,78,0.7)] backdrop-blur-sm border border-[#374151] px-4 py-2 rounded-lg hover:border-[#00A9FF] transition-colors">Koppla Konto</button>
+                    <h1 className="text-xl font-bold" style={{textShadow: '0 0 10px #00A9FF'}}>ByggPilot <span className="text-base font-normal italic text-[#00A9FF]">- Din digitala kollega i byggbranschen</span></h1>
+                    <div className="flex gap-4 items-center">
+                        {!useWidget && (
+                            <>
+                                <button onClick={() => setIsInfoView(true)} className="bg-[rgba(42,54,78,0.7)] backdrop-blur-sm border border-[#374151] px-4 py-2 rounded-lg hover:border-[#00A9FF] transition-colors">Info & Hjälp</button>
+                                <button onClick={() => alert('Koppla konto-funktion kommer snart!')} className="bg-[rgba(42,54,78,0.7)] backdrop-blur-sm border border-[#374151] px-4 py-2 rounded-lg hover:border-[#00A9FF] transition-colors">Koppla Konto</button>
+                            </>
+                        )}
+                        <button onClick={() => setUseWidget(v => !v)} className="ml-2 px-2 py-1 text-xs rounded bg-[#00A9FF] text-white hover:bg-[#0090DD]" style={{boxShadow: '0 0 8px #00A9FF'}}>Byt chatt-UI</button>
                     </div>
                 </header>
                 <div className="flex-grow flex items-center justify-center overflow-hidden">
                     {isInfoView ? <InfoView /> : (
+                        useWidget ? <ChatWidget /> : (
                          <div className="w-full max-w-3xl h-full flex flex-col">
                             <div className="flex-grow overflow-y-auto pr-4">
                                 <div className="space-y-6">
@@ -161,7 +169,7 @@ export default function Home() {
                                 <p className="text-xs text-center text-gray-500 mt-2">ByggPilot kan göra misstag. Dubbelkolla viktig information.</p>
                             </div>
                         </div>
-                    )}
+                    ))}
                 </div>
             </main>
         </>
