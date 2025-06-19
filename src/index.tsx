@@ -509,7 +509,8 @@ function toggleView(showInfo: boolean): void {
     document.documentElement.style.setProperty('--header-height', \`\${headerHeight}px\`);
 
     if (showInfo) {
-        initializeInfoViewContentOnce();
+        // TODO: Återinför info-vyn stegvis när syntaxfelet är isolerat
+        // initializeInfoViewContentOnce();
         if (elements.infoView) elements.infoView.scrollTop = 0;
         // Adjust close button position based on actual header height
         if(elements.closeInfoButtonInner) elements.closeInfoButtonInner.style.top = \`\${headerHeight + 16}px\`; // 1rem padding
@@ -517,47 +518,48 @@ function toggleView(showInfo: boolean): void {
 }
 
 let infoViewInitialized = false;
-function initializeInfoViewContentOnce(): void {
-    if (infoViewInitialized || !elements.infoView) return;
-    elements.infoView.innerHTML = \`
-        <button id="close-info-button-inner" aria-label="Stäng informationsvyn">&times;</button>
-        <div class="info-grid">
-            <div class="info-content-column">
-                <div class="info-card">
-                    <h3>Trött på papperskaos och kvällsadmin?</h3>
-                    <p>ByggPilot är inte bara en chatt. Det är din mest effektiva medarbetare, skapad av hantverkare för hantverkare. Vi vet att din tid är värdefull och att varje timme på kontoret är en förlorad timme på bygget.</p>
-                    <h4>Fråga inte bara – få det gjort.</h4>
-                    <p>Istället för att fråga hur du skriver en offert, säg:</p>
-                    <p><em>"Skapa en proffsig offert för badrumsrenovering hos Svensson på Storgatan 5. Inkludera 15% påslag på material från Ahlsell och räkna med ROT."</em></p>
-                    <p>Istället för att undra över ett krångligt projekt, säg:</p>
-                    <p><em>"Ge mig en checklista och riskanalys för att bila ett betonggolv i en källare. Fokusera på dammhantering och säkerhet."</em></p>
-                </div>
-                <div class="info-card">
-                    <h3>Visionen: Din automatiska projektledare</h3>
-                    <p>Vi bygger ByggPilot för att den ska göra jobbet åt dig. Framtiden är inte att du ber en AI om information. Framtiden är att du säger:</p>
-                    <p><em>"Läs det senaste mailet från Berg & Betong, skapa ett ärende i Bygglet och boka ett uppföljningsmöte i min kalender nästa vecka."</em></p>
-                    <p>Koppla ditt konto och upptäck hur många timmar du kan spara – varje vecka.</p>
-                </div>
-                <div class="info-card about-founder">
-                    <h3>En byggares vision: Varför ByggPilot finns</h3>
-                    <p>ByggPilot föddes ur ren frustration. Efter 15 år i byggbranschens alla led – från snickarlärling till att driva eget med allt vad det innebär av sena kvällar med pappersarbete – såg grundaren Michael Fogelström Ekengren samma mönster överallt: Fantastiska hantverkare som drunknade i administration. Verktyg som lovade guld och gröna skogar men som var för krångliga, för dyra eller helt enkelt inte anpassade för verkligheten ute på fältet.</p>
-                    <p>Den frustrationen blev en vision: Tänk om man kunde skapa en digital kollega? En expert som förstår byggbranschen på djupet, som kan hantera allt från en snabb ÄTA-hantering till att jaga in underlag, och som frigör tid så att hantverkare kan göra det de är bäst på – att bygga.</p>
-                    <p>Det är ByggPilot. Inte ännu ett system. Utan en lösning, byggd på verklig erfarenhet, för att göra din vardag enklare och ditt företag mer lönsamt.</p>
-                    <p><strong>Grundare:</strong> Michael Fogelström Ekengren</p>
-                </div>
-            </div>
-            <div class="info-image-container">
-                <svg class="logo-svg-placeholder" aria-hidden="true"><use xlink:href="#icon-byggpilot-logo"></use></svg>
-                <div class="twin-text">ByggPilot</div>
-                <div class="orbit-ring ring1"></div> <div class="orbit-ring ring2"></div> <div class="orbit-ring ring3"></div>
-            </div>
-        </div>\`;
-    elements.closeInfoButtonInner = document.getElementById('close-info-button-inner') as HTMLButtonElement;
-    if (elements.closeInfoButtonInner) {
-        elements.closeInfoButtonInner.addEventListener('click', () => toggleView(false));
-    }
-    infoViewInitialized = true;
-}
+// TODO: Återinför info-vyn stegvis när syntaxfelet är isolerat
+// function initializeInfoViewContentOnce(): void {
+//     if (infoViewInitialized || !elements.infoView) return;
+//     elements.infoView.innerHTML = \`
+//         <button id="close-info-button-inner" aria-label="Stäng informationsvyn">&times;</button>
+//         <div class="info-grid">
+//             <div class="info-content-column">
+//                 <div class="info-card">
+//                     <h3>Trött på papperskaos och kvällsadmin?</h3>
+//                     <p>ByggPilot är inte bara en chatt. Det är din mest effektiva medarbetare, skapad av hantverkare för hantverkare. Vi vet att din tid är värdefull och att varje timme på kontoret är en förlorad timme på bygget.</p>
+//                     <h4>Fråga inte bara – få det gjort.</h4>
+//                     <p>Istället för att fråga hur du skriver en offert, säg:</p>
+//                     <p><em>"Skapa en proffsig offert för badrumsrenovering hos Svensson på Storgatan 5. Inkludera 15% påslag på material från Ahlsell och räkna med ROT."</em></p>
+//                     <p>Istället för att undra över ett krångligt projekt, säg:</p>
+//                     <p><em>"Ge mig en checklista och riskanalys för att bila ett betonggolv i en källare. Fokusera på dammhantering och säkerhet."</em></p>
+//                 </div>
+//                 <div class="info-card">
+//                     <h3>Visionen: Din automatiska projektledare</h3>
+//                     <p>Vi bygger ByggPilot för att den ska göra jobbet åt dig. Framtiden är inte att du ber en AI om information. Framtiden är att du säger:</p>
+//                     <p><em>"Läs det senaste mailet från Berg & Betong, skapa ett ärende i Bygglet och boka ett uppföljningsmöte i min kalender nästa vecka."</em></p>
+//                     <p>Koppla ditt konto och upptäck hur många timmar du kan spara – varje vecka.</p>
+//                 </div>
+//                 <div class="info-card about-founder">
+//                     <h3>En byggares vision: Varför ByggPilot finns</h3>
+//                     <p>ByggPilot föddes ur ren frustration. Efter 15 år i byggbranschens alla led – från snickarlärling till att driva eget med allt vad det innebär av sena kvällar med pappersarbete – såg grundaren Michael Fogelström Ekengren samma mönster överallt: Fantastiska hantverkare som drunknade i administration. Verktyg som lovade guld och gröna skogar men som var för krångliga, för dyra eller helt enkelt inte anpassade för verkligheten ute på fältet.</p>
+//                     <p>Den frustrationen blev en vision: Tänk om man kunde skapa en digital kollega? En expert som förstår byggbranschen på djupet, som kan hantera allt från en snabb ÄTA-hantering till att jaga in underlag, och som frigör tid så att hantverkare kan göra det de är bäst på – att bygga.</p>
+//                     <p>Det är ByggPilot. Inte ännu ett system. Utan en lösning, byggd på verklig erfarenhet, för att göra din vardag enklare och ditt företag mer lönsamt.</p>
+//                     <p><strong>Grundare:</strong> Michael Fogelström Ekengren</p>
+//                 </div>
+//             </div>
+//             <div class="info-image-container">
+//                 <svg class="logo-svg-placeholder" aria-hidden="true"><use xlink:href="#icon-byggpilot-logo"></use></svg>
+//                 <div class="twin-text">ByggPilot</div>
+//                 <div class="orbit-ring ring1"></div> <div class="orbit-ring ring2"></div> <div class="orbit-ring ring3"></div>
+//             </div>
+//         </div>\`;
+//     elements.closeInfoButtonInner = document.getElementById('close-info-button-inner') as HTMLButtonElement;
+//     if (elements.closeInfoButtonInner) {
+//         elements.closeInfoButtonInner.addEventListener('click', () => toggleView(false));
+//     }
+//     infoViewInitialized = true;
+// }
 
 
 function initializeGisClient(): void {
