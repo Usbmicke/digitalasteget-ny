@@ -383,7 +383,7 @@ function handleCopyText(textToCopy: string, button: HTMLButtonElement): void {
 //         const copyButton = document.createElement('button');
 //         copyButton.classList.add('copy-template-button');
 //         // TODO: Återinför copyButton.innerHTML när syntaxfelet är isolerat
-//         copyButton.innerHTML = `<svg aria-hidden="true" width="16" height="16"><use xlink:href="#icon-copy"></use></svg> <span>Kopiera text</span>`;
+//         copyButton.innerHTML = "<svg aria-hidden=\"true\" width=\"16\" height=\"16\"><use xlink:href=\"#icon-copy\"></use></svg> <span>Kopiera text</span>";
 //         copyButton.setAttribute('aria-label', 'Kopiera malltext');
 //         copyButton.addEventListener('click', () => handleCopyText(templateContent, copyButton));
 //         templateBlock.appendChild(copyButton);
