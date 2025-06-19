@@ -519,7 +519,6 @@ function toggleView(showInfo: boolean): void {
 let infoViewInitialized = false;
 function initializeInfoViewContentOnce(): void {
     if (infoViewInitialized || !elements.infoView) return;
-    // Content baserat på din "Strategisk Plan och Prompt-Schema för ByggPilot"
     elements.infoView.innerHTML = \`
         <button id="close-info-button-inner" aria-label="Stäng informationsvyn">&times;</button>
         <div class="info-grid">
