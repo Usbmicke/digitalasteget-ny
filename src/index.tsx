@@ -519,7 +519,7 @@ function toggleView(showInfo: boolean): void {
 let infoViewInitialized = false;
 function initializeInfoViewContentOnce(): void {
     if (infoViewInitialized || !elements.infoView) return;
-    // Content based on user's "Strategisk Plan och Prompt-Schema för ByggPilot"
+    // Content baserat på din "Strategisk Plan och Prompt-Schema för ByggPilot"
     elements.infoView.innerHTML = \`
         <button id="close-info-button-inner" aria-label="Stäng informationsvyn">&times;</button>
         <div class="info-grid">
@@ -606,33 +606,7 @@ function handleAuthClick(): void {
 }
 
 // Placeholder rotation logic
-   const placeholderTexts = [
-     "Ställ en fråga om KMA-planer...",
-     "Be om offertförslag på badrum...",
-     "Få en checklista för arbetsmiljö..."
-   ];
-   let placeholderIntervalId: number | undefined;
-   let currentPlaceholderIdx = 0;
-
-function updatePlaceholder(): void {
-    if (elements.userInput && elements.userInput.value === '' && document.activeElement !== elements.userInput) {
-        elements.userInput.placeholder = placeholderTexts[currentPlaceholderIdx];
-        currentPlaceholderIdx = (currentPlaceholderIdx + 1) % placeholderTexts.length;
-    }
-}
-
-function startPlaceholderRotation(): void {
-    if (!elements.userInput || elements.userInput.disabled) return; // Don't rotate if disabled
-    if (placeholderIntervalId) window.clearInterval(placeholderIntervalId); // Clear existing interval
-    updatePlaceholder(); // Set initial placeholder immediately
-    placeholderIntervalId = window.setInterval(updatePlaceholder, 4500); // Start new interval
-}
-
-function stopPlaceholderRotation(): void {
-    if (placeholderIntervalId) window.clearInterval(placeholderIntervalId);
-    placeholderIntervalId = undefined;
-}
-
+// ... existing code ...
 
 function setupEventListeners(): void {
     // Ensure all elements exist before adding listeners
