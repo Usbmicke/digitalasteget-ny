@@ -330,116 +330,112 @@ function handleCopyText(textToCopy: string, button: HTMLButtonElement): void {
 }
 
 
-// TODO: Återinför addMessageToChatUI stegvis när syntaxfelet är isolerat
-// function addMessageToChatUI(message: string, sender: 'user' | 'ai', isInitial: boolean = false): void {
-//     if (!elements.chatMessagesInner || !elements.chatMessagesContainer) return;
-//
-//     const templateStartMarker = '---TEMPLATE_START---';
-//     const templateEndMarker = '---TEMPLATE_END---';
-//
-//     let currentText = message;
-//     let templateContent = '';
-//     let preTemplateText = '';
-//     let postTemplateText = '';
-//
-//     const templateStartIndex = currentText.indexOf(templateStartMarker);
-//     const templateEndIndex = currentText.indexOf(templateEndMarker, templateStartIndex);
-//
-//     // Handle AI messages with templates
-//     if (sender === 'ai' && templateStartIndex !== -1 && templateEndIndex !== -1) {
-//         preTemplateText = currentText.substring(0, templateStartIndex).trim();
-//         templateContent = currentText.substring(templateStartIndex + templateStartMarker.length, templateEndIndex).trim();
-//         postTemplateText = currentText.substring(templateEndIndex + templateEndMarker.length).trim();
-//
-//         // Add pre-template text if any, parsed as Markdown
-//         if (preTemplateText) {
-//             const preMessageElement = document.createElement('div');
-//             preMessageElement.classList.add('chat-bubble', 'chat-bubble-ai');
-//             try {
-//                 preMessageElement.innerHTML = marked.parse(preTemplateText) as string;
-//             } catch (e) {
-//                 console.warn("Markdown parsing error for pre-template AI message:", e);
-//                 preMessageElement.textContent = preTemplateText; // Fallback to plain text
-//             }
-//             elements.chatMessagesInner.appendChild(preMessageElement);
-//         }
-//
-//         // Create and add template block
-//         const templateBlock = document.createElement('div');
-//         templateBlock.classList.add('template-block');
-//
-//         const templateContentDiv = document.createElement('div');
-//         templateContentDiv.classList.add('template-block-content');
-//
-//         try {
-//             templateContentDiv.innerHTML = marked.parse(templateContent) as string;
-//         } catch (e) {
-//             console.warn("Markdown parsing error for template content:", e);
-//             templateContentDiv.textContent = templateContent; // Fallback to plain text
-//         }
-//
-//         templateBlock.appendChild(templateContentDiv);
-//
-//         const copyButton = document.createElement('button');
-//         copyButton.classList.add('copy-template-button');
-//         // TODO: Återinför copyButton.innerHTML när syntaxfelet är isolerat
-//         copyButton.innerHTML = `<svg aria-hidden="true" width="16" height="16"><use xlink:href="#icon-copy"></use></svg> <span>Kopiera text</span>`;
-//         copyButton.setAttribute('aria-label', 'Kopiera malltext');
-//         copyButton.addEventListener('click', () => handleCopyText(templateContent, copyButton));
-//         templateBlock.appendChild(copyButton);
-//
-//         elements.chatMessagesInner.appendChild(templateBlock);
-//
-//         // Add post-template text if any, parsed as Markdown
-//         if (postTemplateText) {
-//             const postMessageElement = document.createElement('div');
-//             postMessageElement.classList.add('chat-bubble', 'chat-bubble-ai');
-//              try {
-//                 postMessageElement.innerHTML = marked.parse(postTemplateText) as string;
-//             } catch (e) {
-//                 console.warn("Markdown parsing error for post-template AI message:", e);
-//                 postMessageElement.textContent = postTemplateText; // Fallback to plain text
-//             }
-//             elements.chatMessagesInner.appendChild(postMessageElement);
-//         }
-//
-//     } else { // Regular message (user or AI without template)
-//         const messageElement = document.createElement('div');
-//         messageElement.classList.add('chat-bubble');
-//         if (sender === 'user') {
-//             messageElement.classList.add('chat-bubble-user');
-//             messageElement.textContent = message; // User messages are plain text
-//         } else { // sender === 'ai'
-//             messageElement.classList.add('chat-bubble-ai');
-//             if (isInitial) {
-//                 messageElement.classList.add('chat-bubble-ai-initial');
-//             }
-//             // Parse AI message content as Markdown
-//             try {
-//                 messageElement.innerHTML = marked.parse(message) as string;
-//             } catch (e) {
-//                 console.warn("Markdown parsing error for AI message:", e);
-//                 messageElement.textContent = message; // Fallback to plain text
-//             }
-//             
-//             // Check for wide bubble conditions (code block or long message, not initial)
-//             const containsCodeBlock = message.includes("```");
-//             const isLongMessage = message.length > 300;
-//             const isNotInitialMessage = !isInitial;
-//             // Ensure not to add wide class to the special initial bubble
-//             const isNotInitialBubbleClass = !messageElement.classList.contains('chat-bubble-ai-initial');
-//
-//             if ((containsCodeBlock || isLongMessage) && isNotInitialMessage && isNotInitialBubbleClass) {
-//                  messageElement.classList.add('chat-bubble-ai-wide');
-//             }
-//         }
-//         elements.chatMessagesInner.appendChild(messageElement);
-//     }
-//     // Scroll to bottom
-//     if (elements.chatMessagesContainer.scrollHeight > elements.chatMessagesContainer.clientHeight) {
-//         elements.chatMessagesContainer.scrollTop = elements.chatMessagesContainer.scrollHeight;
-//     }
-// }
+function addMessageToChatUI(message: string, sender: 'user' | 'ai', isInitial: boolean = false): void {
+    if (!elements.chatMessagesInner || !elements.chatMessagesContainer) return;
+
+    const templateStartMarker = '---TEMPLATE_START---';
+    const templateEndMarker = '---TEMPLATE_END---';
+
+    let currentText = message;
+    let templateContent = '';
+    let preTemplateText = '';
+    let postTemplateText = '';
+
+    const templateStartIndex = currentText.indexOf(templateStartMarker);
+    const templateEndIndex = currentText.indexOf(templateEndMarker, templateStartIndex);
+
+    // Handle AI messages with templates
+    if (sender === 'ai' && templateStartIndex !== -1 && templateEndIndex !== -1) {
+        preTemplateText = currentText.substring(0, templateStartIndex).trim();
+        templateContent = currentText.substring(templateStartIndex + templateStartMarker.length, templateEndIndex).trim();
+        postTemplateText = currentText.substring(templateEndIndex + templateEndMarker.length).trim();
+
+        // Add pre-template text if any, parsed as Markdown
+        if (preTemplateText) {
+            const preMessageElement = document.createElement('div');
+            preMessageElement.classList.add('chat-bubble', 'chat-bubble-ai');
+            try {
+                preMessageElement.innerHTML = marked.parse(preTemplateText) as string;
+            } catch (e) {
+                console.warn("Markdown parsing error for pre-template AI message:", e);
+                preMessageElement.textContent = preTemplateText; // Fallback to plain text
+            }
+            elements.chatMessagesInner.appendChild(preMessageElement);
+        }
+
+        // Create and add template block
+        const templateBlock = document.createElement('div');
+        templateBlock.classList.add('template-block');
+
+        const templateContentDiv = document.createElement('div');
+        templateContentDiv.classList.add('template-block-content');
+
+        try {
+            templateContentDiv.innerHTML = marked.parse(templateContent) as string;
+        } catch (e) {
+            console.warn("Markdown parsing error for template content:", e);
+            templateContentDiv.textContent = templateContent; // Fallback to plain text
+        }
+
+        templateBlock.appendChild(templateContentDiv);
+
+        const copyButton = document.createElement('button');
+        copyButton.classList.add('copy-template-button');
+        copyButton.innerHTML = '<svg aria-hidden="true" width="16" height="16"><use xlink:href="#icon-copy"></use></svg> <span>Kopiera text</span>';
+        copyButton.setAttribute('aria-label', 'Kopiera malltext');
+        copyButton.addEventListener('click', () => handleCopyText(templateContent, copyButton));
+        templateBlock.appendChild(copyButton);
+
+        elements.chatMessagesInner.appendChild(templateBlock);
+
+        // Add post-template text if any, parsed as Markdown
+        if (postTemplateText) {
+            const postMessageElement = document.createElement('div');
+            postMessageElement.classList.add('chat-bubble', 'chat-bubble-ai');
+            try {
+                postMessageElement.innerHTML = marked.parse(postTemplateText) as string;
+            } catch (e) {
+                console.warn("Markdown parsing error for post-template AI message:", e);
+                postMessageElement.textContent = postTemplateText; // Fallback to plain text
+            }
+            elements.chatMessagesInner.appendChild(postMessageElement);
+        }
+
+    } else { // Regular message (user or AI without template)
+        const messageElement = document.createElement('div');
+        messageElement.classList.add('chat-bubble');
+        if (sender === 'user') {
+            messageElement.classList.add('chat-bubble-user');
+            messageElement.textContent = message; // User messages are plain text
+        } else { // sender === 'ai'
+            messageElement.classList.add('chat-bubble-ai');
+            if (isInitial) {
+                messageElement.classList.add('chat-bubble-ai-initial');
+            }
+            // Parse AI message content as Markdown
+            try {
+                messageElement.innerHTML = marked.parse(message) as string;
+            } catch (e) {
+                console.warn("Markdown parsing error for AI message:", e);
+                messageElement.textContent = message; // Fallback to plain text
+            }
+            // Check for wide bubble conditions (code block or long message, not initial)
+            const containsCodeBlock = message.includes("```");
+            const isLongMessage = message.length > 300;
+            const isNotInitialMessage = !isInitial;
+            // Ensure not to add wide class to the special initial bubble
+            const isNotInitialBubbleClass = !messageElement.classList.contains('chat-bubble-ai-initial');
+            if ((containsCodeBlock || isLongMessage) && isNotInitialMessage && isNotInitialBubbleClass) {
+                messageElement.classList.add('chat-bubble-ai-wide');
+            }
+        }
+        elements.chatMessagesInner.appendChild(messageElement);
+    }
+    // Scroll to bottom
+    if (elements.chatMessagesContainer.scrollHeight > elements.chatMessagesContainer.clientHeight) {
+        elements.chatMessagesContainer.scrollTop = elements.chatMessagesContainer.scrollHeight;
+    }
+}
 
 
 async function handleSend(): Promise<void> {
