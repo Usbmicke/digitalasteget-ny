@@ -533,7 +533,7 @@ function initializeInfoViewContentOnce(): void {
                     <p>Istället för att undra över ett krångligt projekt, säg:</p>
                     <p><em>"Ge mig en checklista och riskanalys för att bila ett betonggolv i en källare. Fokusera på dammhantering och säkerhet."</em></p>
                 </div>
-                 <div class="info-card">
+                <div class="info-card">
                     <h3>Visionen: Din automatiska projektledare</h3>
                     <p>Vi bygger ByggPilot för att den ska göra jobbet åt dig. Framtiden är inte att du ber en AI om information. Framtiden är att du säger:</p>
                     <p><em>"Läs det senaste mailet från Berg & Betong, skapa ett ärende i Bygglet och boka ett uppföljningsmöte i min kalender nästa vecka."</em></p>
